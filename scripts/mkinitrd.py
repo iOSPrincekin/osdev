@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from typing import Optional, Dict, List, Set, Tuple
 from struct import calcsize, pack
 import posixpath

@@ -17,7 +17,9 @@ LIBDWARF_DIR = $(BUILD_DIR)/libdwarf/build
 
 
 .NOTPARALLEL:
-all: autoconf binutils gcc musl libtool libdwarf musl-shared makepkg
+# Build the core cross toolchain components.  The makepkg helper is only
+# needed for building userspace packages and can be set up separately.
+all: autoconf binutils gcc musl libtool libdwarf musl-shared
 
 clean:
 	rm -rf $(BINUTILS_DIR)
@@ -362,8 +364,11 @@ $(MAKEPKG_SRC_DIR).tar.gz:
 
 
 $(MAKEPKG_DIR)/.install: | $(MAKEPKG_SRC_DIR).tar.gz
+	# Extract prebuilt makepkg binary and install it into the toolchain bin dir.
+	# The archive contains a subdirectory (e.g. makepkg_0.1.5_darwin_x86_64/),
+	# so copy the binary from there instead of expecting it at the top level.
 	tar -xf $(MAKEPKG_SRC_DIR).tar.gz -C $(@D)
-	cp $(MAKEPKG_DIR)/makepkg $(MAKEPKG_PREFIX)/makepkg
+	cp $(MAKEPKG_SRC_DIR)/makepkg $(MAKEPKG_PREFIX)/makepkg
 	chmod +x $(MAKEPKG_PREFIX)/makepkg
 	@touch $@
 
@@ -395,9 +400,13 @@ $(BUILD_DIR)/%/src: $(BUILD_DIR)/%/$$(archive)
 .PRECIOUS: $(BUILD_DIR)/%.tar.gz
 $(BUILD_DIR)/%.tar.gz:
 	@mkdir -p $(@D)
-	wget -nc $(source) -o - -O $@
+	# Always (re)download the archive so that a previous zero-byte or
+	# partial file does not get silently reused by -nc.
+	wget $(source) -O $@
 
 .PRECIOUS: $(BUILD_DIR)/%.tar.xz
 $(BUILD_DIR)/%.tar.xz:
 	@mkdir -p $(@D)
-	wget -nc $(source) -o - -O $@
+	# Always (re)download the archive so that a previous zero-byte or
+	# partial file does not get silently reused by -nc.
+	wget $(source) -O $@

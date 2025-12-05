@@ -16,7 +16,17 @@ BUILD_DIR=${BUILD_DIR:-${PROJECT_DIR}/build}
 TOOL_ROOT=${TOOL_ROOT:-${BUILD_DIR}/toolchain}
 SYS_ROOT=${SYS_ROOT:-${PROJECT_DIR}/sysroot}
 
-NPROC=${NPROC:-$(nproc)}
+# Get number of CPU cores (cross-platform)
+if command -v nproc >/dev/null 2>&1; then
+  # Linux
+  NPROC=${NPROC:-$(nproc)}
+elif command -v sysctl >/dev/null 2>&1; then
+  # macOS/BSD
+  NPROC=${NPROC:-$(sysctl -n hw.ncpu)}
+else
+  # Fallback
+  NPROC=${NPROC:-1}
+fi
 MAKE="${MAKE:-make}"
 MAKE_j="${MAKE:-make} -j${NPROC}"
 

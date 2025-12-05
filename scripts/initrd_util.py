@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 """
 Utility for examining and modifying initrd filesystem images.
 

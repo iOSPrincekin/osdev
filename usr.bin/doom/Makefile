@@ -8,7 +8,7 @@ include ../../scripts/extern.mk
 SRCS = main.c
 CFLAGS += -g -fPIE
 LDFLAGS += -pie
-INCLUDE += -I$(SOURCE_PATH)
+INCLUDE += -I$(SOURCE_PATH) -I$(PROJECT_DIR)/include/uapi
 
 SRCS_DOOM = dummy.c am_map.c doomdef.c doomstat.c dstrings.c d_event.c d_items.c d_iwad.c d_loop.c \
 		    d_main.c d_mode.c d_net.c f_finale.c f_wipe.c g_game.c hu_lib.c hu_stuff.c info.c i_cdmus.c \

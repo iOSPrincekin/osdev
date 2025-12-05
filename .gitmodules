@@ -1,4 +1,4 @@
 [submodule "third-party/musl"]
 	path = third-party/musl
-	url = https://github.com/aar10n/osdev-musl.git
+	url = git@github.com:aar10n/osdev-musl.git
 	branch = master

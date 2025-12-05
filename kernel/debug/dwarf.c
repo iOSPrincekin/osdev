@@ -881,5 +881,12 @@ LIBDWARF_STUB(fclose);
 LIBDWARF_STUB(getcwd);
 LIBDWARF_STUB(do_decompress_zlib);
 LIBDWARF_STUB(uncompress);
+LIBDWARF_STUB(fflush);
+LIBDWARF_STUB(fprintf);
+
+// stderr is a FILE* variable, not a function, so we need to provide it
+// FILE is typically defined in stdio.h, but we don't include that in kernel
+// Use void* instead to avoid type issues
+_used void *stderr = NULL;
 
 #undef LIBDWARF_STUB

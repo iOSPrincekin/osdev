@@ -122,6 +122,22 @@ toolchain::edk2::build() {
   fi
 
   local build_type=${EDK2_BUILD_TYPE:-RELEASE}
+  
+  # Add LLVM tools to PATH for CLANGPDB toolchain (needed for llvm-lib, etc.)
+  if [[ -d "/usr/local/opt/llvm@21/bin" ]]; then
+    export PATH="/usr/local/opt/llvm@21/bin:${PATH}"
+    # Set library path so lld can find libLLVM.dylib
+    if [[ -d "/usr/local/opt/llvm@21/lib" ]]; then
+      export DYLD_LIBRARY_PATH="/usr/local/opt/llvm@21/lib:${DYLD_LIBRARY_PATH:-}"
+    fi
+  elif [[ -d "/usr/local/Cellar/llvm/21.1.6/bin" ]]; then
+    export PATH="/usr/local/Cellar/llvm/21.1.6/bin:${PATH}"
+    # Set library path so lld can find libLLVM.dylib
+    if [[ -d "/usr/local/Cellar/llvm/21.1.6/lib" ]]; then
+      export DYLD_LIBRARY_PATH="/usr/local/Cellar/llvm/21.1.6/lib:${DYLD_LIBRARY_PATH:-}"
+    fi
+  fi
+  
   pushd ${edk2_dir}
     . edksetup.sh --reconfig
     build -p ${package} -a ${arch} -t CLANGPDB -b ${build_type}
@@ -143,7 +159,8 @@ toolchain::edk2::build() {
     local autogen_obj=${output_dir}/AutoGen.obj
 
     cp ${output_dir}/static_library_files.lst ${BUILD_DIR}/static_library_files.lst
-    sed -i "1s#.*#${autogen_obj}#" ${BUILD_DIR}/static_library_files.lst
+    # macOS sed requires an extension argument (empty string for in-place edit)
+    sed -i '' "1s#.*#${autogen_obj}#" ${BUILD_DIR}/static_library_files.lst
     echo "copied output to ${BUILD_DIR}/static_library_files.lst"
   elif [[ ${package_name} == "ovmf" ]]; then
     cp ${edk2_dir}/Build/Ovmf${arch}/${build_type}_CLANGPDB/FV/OVMF.fd ${BUILD_DIR}/OVMF_${arch}.fd

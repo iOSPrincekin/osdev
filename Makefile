@@ -81,12 +81,13 @@ QEMU_DEBUG_OPTIONS += -trace events=$(QEMU_TRACE_FILE),file=$(BUILD_DIR)/events.
 endif
 endif
 
+OVMF_BIOS = $(if $(wildcard $(BUILD_DIR)/OVMF_$(WINARCH).fd),-bios $(BUILD_DIR)/OVMF_$(WINARCH).fd,)
 QEMU_OPTIONS ?= \
 	-cpu $(QEMU_CPU) \
 	-smp $(QEMU_SMP) \
 	-m $(QEMU_MEM) \
 	-machine $(QEMU_MACHINE) \
-	-bios $(BUILD_DIR)/OVMF_$(WINARCH).fd \
+	$(OVMF_BIOS) \
 	-drive file=$(BUILD_DIR)/osdev.img,id=boot,format=raw,if=none \
 	-no-shutdown -no-reboot -action panic=pause \
 	$(QEMU_DEVICES) \
@@ -241,7 +242,9 @@ $(BUILD_DIR)/libdwarf_kernel.a: $(TOOL_ROOT)/lib/libdwarf.a
 		--redefine-sym fclose=__debug_fclose_stub \
 		--redefine-sym getcwd=__debug_getcwd_stub \
 		--redefine-sym do_decompress_zlib=__debug_do_decompress_zlib_stub \
-		--redefine-sym uncompress=__debug_uncompress_stub
+		--redefine-sym uncompress=__debug_uncompress_stub \
+		--redefine-sym fflush=__debug_fflush_stub \
+		--redefine-sym fprintf=__debug_fprintf_stub
 
 $(TOOL_ROOT)/lib/libdwarf.a:
 	$(MAKE) -C toolchain libdwarf
@@ -304,12 +307,28 @@ packages:
 userspace-dir-%:
 	$(MAKE) -C $*
 
-userspace-dir-install-%:
-	$(MAKE) -C $* install
+userspace-dir-install-sbin:
+	$(MAKE) -C sbin install
 	@touch $(BUILD_DIR)/sysroot_sha1
 
-userspace-dir-clean-%:
-	$(MAKE) -C $* clean
+userspace-dir-install-bin:
+	$(MAKE) -C bin install
+	@touch $(BUILD_DIR)/sysroot_sha1
+
+userspace-dir-install-usr.bin:
+	$(MAKE) -C usr.bin install
+	@touch $(BUILD_DIR)/sysroot_sha1
+
+userspace-dir-clean-sbin:
+	$(MAKE) -C sbin clean
+	@touch $(BUILD_DIR)/sysroot_sha1
+
+userspace-dir-clean-bin:
+	$(MAKE) -C bin clean
+	@touch $(BUILD_DIR)/sysroot_sha1
+
+userspace-dir-clean-usr.bin:
+	$(MAKE) -C usr.bin clean
 	@touch $(BUILD_DIR)/sysroot_sha1
 
 #
@@ -370,7 +389,13 @@ $(BUILD_DIR)/ext2.img: $(call pairs-src-paths, $(EXT2_DEPS))
 # development tools
 #
 
-tools: qemu-profile-plugin clang-tidy-plugin
+tools:
+	@if [ "$(CLANG_BUILD_PLUGIN)" = "y" ]; then \
+		$(MAKE) -C tools/clang-tidy-plugin || true; \
+	fi
+	@if [ "$(QEMU_BUILD_PLUGIN)" = "y" ]; then \
+		$(MAKE) -C tools/qemu-profile-plugin || true; \
+	fi
 
 # clang tidy plugin
 ifeq ($(CLANG_BUILD_PLUGIN),y)
