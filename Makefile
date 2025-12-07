@@ -62,8 +62,8 @@ include scripts/defs.mk
 include Makefile.local
 
 ifeq ($(DEBUG),y)
-CFLAGS += -gdwarf-5
-CXXFLAGS += -gdwarf-5
+CFLAGS += -gdwarf-5 -O0
+CXXFLAGS += -gdwarf-5 -O0
 LDFLAGS += -g
 ASFLAGS += -gdwarf-5
 NASMFLAGS += -g -F dwarf -O0
@@ -358,6 +358,10 @@ clean-kernel:
 # loadable kernel elf
 $(BUILD_DIR)/kernel.elf: $(KERNEL_OBJECTS) $(BUILD_DIR)/libdwarf_kernel.a
 	$(LD) $(call module-var,LDFLAGS,KERNEL) -o $@ --no-relax $^
+	@if [ "$(DEBUG)" = "y" ]; then \
+		echo "Preserving debug symbols in kernel.elf"; \
+		build/toolchain/bin/x86_64-linux-musl-objcopy --only-keep-debug $@ $@.debug 2>/dev/null || true; \
+	fi
 
 # kernel libdwarf
 $(BUILD_DIR)/libdwarf_kernel.a: $(TOOL_ROOT)/lib/libdwarf.a
