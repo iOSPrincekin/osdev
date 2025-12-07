@@ -111,21 +111,123 @@ all: $(BUILD_DIR)/osdev.img tools
 
 run: QEMU_SHELL_DEVICE = telnet:127.0.0.1:8008,server,nowait
 run: $(BUILD_DIR)/osdev.img
+	@echo "QEMU Command:"
+	@echo "$(QEMU) $(QEMU_OPTIONS) $(if $(QEMU_GDB),-s,) -monitor $(QEMU_MONITOR) $(if $(QEMU_NOGRAPHICS),-nographic,) $(EXTRA_OPTIONS)"
+	@echo ""
 	$(QEMU) $(QEMU_OPTIONS) $(if $(QEMU_GDB),-s,) -monitor $(QEMU_MONITOR) $(if $(QEMU_NOGRAPHICS),-nographic,) $(EXTRA_OPTIONS)
 
 run-shell: QEMU_SHELL_DEVICE = mon:stdio
 run-shell: $(BUILD_DIR)/osdev.img
+	@echo "QEMU Command:"
+	@echo "$(QEMU) $(QEMU_OPTIONS) $(EXTRA_OPTIONS) -s -nographic"
+	@echo ""
 	$(QEMU) $(QEMU_OPTIONS) $(EXTRA_OPTIONS) -s -nographic
 
+# GDB debug port
+GDB_PORT ?= 1234
+
+# Kernel entry point (physical address: 0x100000)
+# Kernel virtual offset: 0xFFFF800000000000
+# Kernel entry point (virtual): 0xFFFF8000000100000
+
 debug: QEMU_SHELL_DEVICE = mon:stdio
-debug: $(BUILD_DIR)/osdev.img
-	$(QEMU) -s -S $(QEMU_OPTIONS) &
+debug: $(BUILD_DIR)/osdev.img $(BUILD_DIR)/.lldb-init
+	@echo "=========================================="
+	@echo "  QEMU Debug Session (LLDB)"
+	@echo "=========================================="
+	@echo "GDB Server: localhost:$(GDB_PORT)"
+	@echo "Kernel entry (virtual): 0xFFFF8000000100000"
+	@echo "Kernel entry (physical): 0x100000"
+	@echo "QEMU log: $(BUILD_DIR)/qemu.log"
+	@echo ""
+	@echo "QEMU Command:"
+	@echo "$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR)"
+	@echo ""
+	@echo "Starting QEMU in background..."
+	@$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) 2>&1 > $(BUILD_DIR)/qemu.log &
+	@sleep 1
+	@echo "Starting LLDB..."
+	@echo ""
+	lldb -s $(BUILD_DIR)/.lldb-init $(BUILD_DIR)/kernel.elf
+
+# Generate LLDB initialization script
+$(BUILD_DIR)/.lldb-init: Makefile
+	@mkdir -p $(BUILD_DIR)
+	@echo "# LLDB initialization script for kernel debugging" > $@
+	@echo "# Generated automatically by Makefile" >> $@
+	@echo "" >> $@
+	@echo "# Load kernel symbols" >> $@
+	@echo "file $(BUILD_DIR)/kernel.elf" >> $@
+	@echo "" >> $@
+	@echo "# Connect to QEMU GDB server" >> $@
+	@echo "gdb-remote localhost:$(GDB_PORT)" >> $@
+	@echo "" >> $@
+	@echo "# Set breakpoints" >> $@
+	@echo "breakpoint set --name entry" >> $@
+	@echo "breakpoint set --name kmain" >> $@
+	@echo "" >> $@
+	@echo "# Continue execution and show registers" >> $@
+	@echo "continue" >> $@
+	@echo "register read" >> $@
+
+# GDB debug target (legacy, for compatibility)
+debug-gdb: QEMU_SHELL_DEVICE = mon:stdio
+debug-gdb: $(BUILD_DIR)/osdev.img
+	@echo "=========================================="
+	@echo "  QEMU Debug Session (GDB)"
+	@echo "=========================================="
+	@echo "GDB Server: localhost:$(GDB_PORT)"
+	@echo "Kernel entry (virtual): 0xFFFF8000000100000"
+	@echo "Kernel entry (physical): 0x100000"
+	@echo "QEMU log: $(BUILD_DIR)/qemu.log"
+	@echo ""
+	@echo "QEMU Command:"
+	@echo "$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR)"
+	@echo ""
+	@echo "Starting QEMU in background..."
+	@$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) 2>&1 > $(BUILD_DIR)/qemu.log &
+	@sleep 1
+	@echo "Starting GDB..."
+	@echo ""
 	$(GDB) -w \
-		-ex "target remote localhost:1234" \
-		-ex "add-symbol-file $(BUILD_DIR)/kernel.elf"
+		-ex "set confirm off" \
+		-ex "set architecture i386:x86-64" \
+		-ex "target remote localhost:$(GDB_PORT)" \
+		-ex "set disassembly-flavor intel" \
+		-ex "add-symbol-file $(BUILD_DIR)/kernel.elf" \
+		-ex "break entry" \
+		-ex "break kmain" \
+		-ex "continue" \
+		-ex "info registers"
+
+# Debug QEMU only (don't start GDB/LLDB)
+debug-qemu: QEMU_SHELL_DEVICE = mon:stdio
+debug-qemu: $(BUILD_DIR)/osdev.img
+	@echo "=========================================="
+	@echo "  QEMU Debug Server Only"
+	@echo "=========================================="
+	@echo "GDB Server: localhost:$(GDB_PORT)"
+	@echo "Kernel entry (virtual): 0xFFFF8000000100000"
+	@echo "Kernel entry (physical): 0x100000"
+	@echo "QEMU log: $(BUILD_DIR)/qemu.log"
+	@echo ""
+	@echo "QEMU Command:"
+	@echo "$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) $(if $(QEMU_NOGRAPHICS),-nographic,)"
+	@echo ""
+	@echo "Connect with:"
+	@echo "  GDB:  target remote localhost:$(GDB_PORT)"
+	@echo "  LLDB: gdb-remote localhost:$(GDB_PORT)"
+	@echo ""
+	@echo "Press Ctrl+C to stop QEMU"
+	@echo ""
+	$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) $(if $(QEMU_NOGRAPHICS),-nographic,)
 
 run-debug: QEMU_SHELL_DEVICE = mon:stdio
 run-debug: $(BUILD_DIR)/osdev.img
+	@echo "QEMU Command:"
+	@echo "$(QEMU) -s -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR)"
+	@echo ""
+	@echo "Starting QEMU in background..."
 	$(QEMU) -s -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) 2>&1 > $(BUILD_DIR)/qemu.log &
 
 ifeq ($(QEMU_BUILD_PLUGIN),y)
@@ -175,16 +277,42 @@ clean: clean-bootloader clean-kernel clean-userspace
 	rm -rf $(SYS_ROOT)
 
 
+# External bootloader path (if set, will be used instead of building one)
+EXTERNAL_BOOTLOADER ?=
+
+# Determine which bootloader to use
+ifeq ($(EXTERNAL_BOOTLOADER),)
+  BOOTLOADER_EFI = $(BUILD_DIR)/boot$(WINARCH).efi
+  BOOTLOADER_DEPS = $(BUILD_DIR)/boot$(WINARCH).efi
+else
+  BOOTLOADER_EFI = $(EXTERNAL_BOOTLOADER)
+  BOOTLOADER_DEPS = $(EXTERNAL_BOOTLOADER)
+endif
+
 # efi bootable image
 .PHONY: osdev.img
 osdev.img: $(BUILD_DIR)/osdev.img
-$(BUILD_DIR)/osdev.img: config.ini $(BUILD_DIR)/boot$(WINARCH).efi $(BUILD_DIR)/kernel.elf $(BUILD_DIR)/initrd.img
+$(BUILD_DIR)/osdev.img: config.ini $(BOOTLOADER_DEPS) $(BUILD_DIR)/kernel.elf $(BUILD_DIR)/initrd.img
+	@echo "Building osdev.img..."
+	@if [ -n "$(EXTERNAL_BOOTLOADER)" ]; then \
+		echo "Using external bootloader: $(EXTERNAL_BOOTLOADER)"; \
+		if [ ! -f "$(EXTERNAL_BOOTLOADER)" ]; then \
+			echo "Error: External bootloader not found: $(EXTERNAL_BOOTLOADER)"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Using built bootloader: $(BUILD_DIR)/boot$(WINARCH).efi"; \
+	fi
 	dd if=/dev/zero of=$@ bs=1M count=256
 # 	256M -> 268435456 / 512 = 524288 sectors
 	mformat -i $@ -F -h 64 -s 32 -T 524288 -c 1 -v osdev :: # format as FAT32
 	mmd -i $@ ::/EFI
 	mmd -i $@ ::/EFI/BOOT
-	mcopy -i $@ $^ ::/EFI/BOOT
+	mcopy -i $@ config.ini ::/EFI/BOOT
+	mcopy -i $@ $(BOOTLOADER_EFI) ::/EFI/BOOT/bootX64.efi
+	mcopy -i $@ $(BUILD_DIR)/kernel.elf ::/EFI/BOOT
+	mcopy -i $@ $(BUILD_DIR)/initrd.img ::/EFI/BOOT
+	@echo "osdev.img built successfully"
 
 # initrd filesystem image
 initrd: $(BUILD_DIR)/initrd.img
