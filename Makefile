@@ -126,9 +126,26 @@ run-shell: $(BUILD_DIR)/osdev.img
 # GDB debug port
 GDB_PORT ?= 1234
 
+# Bootloader load address (slide) - set in Makefile.local if known
+# For UEFI bootloader, this is typically determined at runtime
+BOOTLOADER_SLIDE ?= 0x0000DDA3000
+
 # Kernel entry point (physical address: 0x100000)
 # Kernel virtual offset: 0xFFFF800000000000
 # Kernel entry point (virtual): 0xFFFF8000000100000
+
+# QEMU options without debugcon (for debug target to override)
+QEMU_OPTIONS_NO_DEBUGCON = \
+	-cpu $(QEMU_CPU) \
+	-smp $(QEMU_SMP) \
+	-m $(QEMU_MEM) \
+	-machine $(QEMU_MACHINE) \
+	$(OVMF_BIOS) \
+	-drive file=$(BUILD_DIR)/osdev.img,id=boot,format=raw,if=none \
+	-no-shutdown -no-reboot -action panic=pause \
+	$(QEMU_DEVICES) \
+	$(QEMU_SERIAL_DEVICES) \
+	$(QEMU_EXTRA_OPTIONS)
 
 debug: QEMU_SHELL_DEVICE = mon:stdio
 debug: $(BUILD_DIR)/osdev.img $(BUILD_DIR)/.lldb-init
@@ -139,12 +156,13 @@ debug: $(BUILD_DIR)/osdev.img $(BUILD_DIR)/.lldb-init
 	@echo "Kernel entry (virtual): 0xFFFF8000000100000"
 	@echo "Kernel entry (physical): 0x100000"
 	@echo "QEMU log: $(BUILD_DIR)/qemu.log"
+	@echo "Debug log: $(BUILD_DIR)/debug.log"
 	@echo ""
 	@echo "QEMU Command:"
-	@echo "$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR)"
+	@echo "$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS_NO_DEBUGCON) -debugcon file:$(BUILD_DIR)/debug.log -global isa-debugcon.iobase=0x402 -monitor $(QEMU_MONITOR)"
 	@echo ""
 	@echo "Starting QEMU in background..."
-	@$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS) -monitor $(QEMU_MONITOR) 2>&1 > $(BUILD_DIR)/qemu.log &
+	@$(QEMU) -gdb tcp::$(GDB_PORT) -S $(QEMU_OPTIONS_NO_DEBUGCON) -debugcon file:$(BUILD_DIR)/debug.log -global isa-debugcon.iobase=0x402 -monitor $(QEMU_MONITOR) 2>&1 > $(BUILD_DIR)/qemu.log &
 	@sleep 1
 	@echo "Starting LLDB..."
 	@echo ""
@@ -162,7 +180,47 @@ $(BUILD_DIR)/.lldb-init: Makefile
 	@echo "# Connect to QEMU GDB server" >> $@
 	@echo "gdb-remote localhost:$(GDB_PORT)" >> $@
 	@echo "" >> $@
+	@echo "# Load bootloader symbols" >> $@
+	@if [ -n "$(EXTERNAL_BOOTLOADER)" ] && [ -f "$(EXTERNAL_BOOTLOADER)" ]; then \
+		BOOTLOADER_DIR=$$(dirname "$(EXTERNAL_BOOTLOADER)"); \
+		BOOTLOADER_DLL=$$(find "$$BOOTLOADER_DIR" -type f -name "bootX64.dll" 2>/dev/null | head -1); \
+		if [ -z "$$BOOTLOADER_DLL" ] || [ ! -f "$$BOOTLOADER_DLL" ]; then \
+			BOOTLOADER_DLL=$$(find "$$BOOTLOADER_DIR" -type f -name "boot.dll" 2>/dev/null | head -1); \
+		fi; \
+		if [ -n "$$BOOTLOADER_DLL" ] && [ -f "$$BOOTLOADER_DLL" ]; then \
+			echo "# Adding bootloader DLL: $$BOOTLOADER_DLL" >> $@; \
+			echo "target modules add $$BOOTLOADER_DLL" >> $@; \
+			if [ -n "$(BOOTLOADER_SLIDE)" ]; then \
+				echo "# Loading bootloader with slide address: $(BOOTLOADER_SLIDE)" >> $@; \
+				echo "target modules load --file $$BOOTLOADER_DLL --slide $(BOOTLOADER_SLIDE)" >> $@; \
+			else \
+				echo "# Note: BOOTLOADER_SLIDE not set in Makefile.local" >> $@; \
+				echo "# To find the bootloader load address, run in LLDB:" >> $@; \
+				echo "#   image list" >> $@; \
+				echo "#   target modules list" >> $@; \
+				echo "# Then load with: target modules load --file $$BOOTLOADER_DLL --slide <address>" >> $@; \
+			fi; \
+		else \
+			echo "# Note: Bootloader DLL not found, loading EFI file instead" >> $@; \
+			echo "target modules add $(EXTERNAL_BOOTLOADER)" >> $@; \
+			if [ -n "$(BOOTLOADER_SLIDE)" ]; then \
+				echo "target modules load --file $(EXTERNAL_BOOTLOADER) --slide $(BOOTLOADER_SLIDE)" >> $@; \
+			fi; \
+		fi; \
+	elif [ -f "$(BUILD_DIR)/loader.dll" ]; then \
+		echo "target modules add $(BUILD_DIR)/loader.dll" >> $@; \
+		if [ -n "$(BOOTLOADER_SLIDE)" ]; then \
+			echo "target modules load --file $(BUILD_DIR)/loader.dll --slide $(BOOTLOADER_SLIDE)" >> $@; \
+		fi; \
+	fi
+	@echo "" >> $@
 	@echo "# Set breakpoints" >> $@
+	@echo "# Bootloader entry point (_ModuleEntryPoint or __ModuleEntryPoint)" >> $@
+	@echo "breakpoint set --name __ModuleEntryPoint" >> $@
+	@echo "breakpoint set --name _ModuleEntryPoint" >> $@
+	@echo "# Bootloader main function (UefiMain)" >> $@
+	@echo "breakpoint set --name UefiMain" >> $@
+	@echo "# Kernel breakpoints" >> $@
 	@echo "breakpoint set --name entry" >> $@
 	@echo "breakpoint set --name kmain" >> $@
 	@echo "" >> $@
