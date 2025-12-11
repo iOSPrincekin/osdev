@@ -1,0 +1,59 @@
+## Local overrides
+
+DEBUG = y
+QEMU_DEBUG = y
+
+# -------------- #
+#  Bootloader    #
+# -------------- #
+
+# Use external bootloader from OpenCore build
+EXTERNAL_BOOTLOADER = /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OpenCorePkg/DEBUG_XCODE5/X64/bootX64.efi
+
+# Bootloader load address (slide) - set this if you know the bootloader load address
+# You can find it by running 'image list' or 'target modules list' in LLDB after connecting
+# Example from OpenCore-Boot.sh: 0x0007CDED000
+# BOOTLOADER_SLIDE = 0x0007CDED000
+
+# -------------- #
+#  Debug Options #
+# -------------- #
+
+# Load additional UEFI driver symbols in LLDB
+# Example: Load ConSplitterDxe.dll at address 0x0000E8F1000
+UEFI_DRIVER_DLL = /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/Console/ConSplitterDxe/ConSplitterDxe/DEBUG/ConSplitterDxe.dll
+UEFI_DRIVER_SLIDE = 0x0000E8F1000
+
+# -------------- #
+#  QEMU Options  #
+# -------------- #
+
+#QEMU_CPU = Nehalem
+#QEMU_NCORES = 1
+#QEMU_NTHREADS = 1
+#QEMU_MEM = 256M
+
+QEMU_MONITOR = telnet:127.0.0.1:55544,server,nowait
+
+QEMU_EXTRA_OPTIONS += -device usb-kbd,bus=xhci.0
+#QEMU_EXTRA_OPTIONS += -device usb-mouse,bus=xhci.0
+QEMU_EXTRA_OPTIONS += -device usb-storage,drive=boot,bus=xhci.0
+
+QEMU_PROFILE_PLUGIN = build/tools/qemu-profile-plugin/qemu-profile.so
+
+# ---------------- #
+#  Remote Options  #
+# ---------------- #
+
+#REMOTE_USER = user
+#REMOTE_HOST = host
+
+#REMOTE_QEMU = qemu-system-$(ARCH)
+
+#REMOTE_QEMU_OPTIONS ?= \
+#	-cpu kvm64 \
+#	-bios OVMF_$(WINARCH).fd \
+#	-drive file=osdev.img,id=boot,format=raw,if=none \
+#	$(QEMU_DEVICES) \
+#	$(QEMU_EXTRA_OPTIONS) \
+#	$(QEMU_DEBUG_OPTIONS)

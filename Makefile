@@ -149,6 +149,9 @@ QEMU_OPTIONS_NO_DEBUGCON = \
 
 debug: QEMU_SHELL_DEVICE = mon:stdio
 debug: $(BUILD_DIR)/osdev.img $(BUILD_DIR)/.lldb-init
+	@echo "Killing all $(QEMU) processes..."
+	@pkill -9 -f $(QEMU) || true
+	@sleep 0.5
 	@echo "=========================================="
 	@echo "  QEMU Debug Session (LLDB)"
 	@echo "=========================================="
@@ -211,6 +214,18 @@ $(BUILD_DIR)/.lldb-init: Makefile
 		echo "target modules add $(BUILD_DIR)/loader.dll" >> $@; \
 		if [ -n "$(BOOTLOADER_SLIDE)" ]; then \
 			echo "target modules load --file $(BUILD_DIR)/loader.dll --slide $(BOOTLOADER_SLIDE)" >> $@; \
+		fi; \
+	fi
+	@echo "" >> $@
+	@echo "# Load additional UEFI driver symbols" >> $@
+	@if [ -n "$(UEFI_DRIVER_DLL)" ] && [ -n "$(UEFI_DRIVER_SLIDE)" ]; then \
+		if [ -f "$(UEFI_DRIVER_DLL)" ]; then \
+			echo "# Adding UEFI driver DLL: $(UEFI_DRIVER_DLL)" >> $@; \
+			echo "target modules add $(UEFI_DRIVER_DLL)" >> $@; \
+			echo "# Loading UEFI driver with slide address: $(UEFI_DRIVER_SLIDE)" >> $@; \
+			echo "target modules load --file $(UEFI_DRIVER_DLL) --slide $(UEFI_DRIVER_SLIDE)" >> $@; \
+		else \
+			echo "# Warning: UEFI driver DLL not found: $(UEFI_DRIVER_DLL)" >> $@; \
 		fi; \
 	fi
 	@echo "" >> $@
