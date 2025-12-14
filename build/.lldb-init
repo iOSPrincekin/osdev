@@ -15,6 +15,31 @@ target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencor
 
 # Load additional UEFI driver symbols
 
+
+# SecMain driver
+# Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/OvmfPkg/Sec/SecMain/DEBUG/SecMain.dll
+target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/OvmfPkg/Sec/SecMain/DEBUG/SecMain.dll
+# Loading UEFI driver with slide address: 0x00fffc6000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/OvmfPkg/Sec/SecMain/DEBUG/SecMain.dll --slide 0x00fffc6000
+
+# PcdPeim driver
+# Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/PCD/Pei/Pcd/DEBUG/PcdPeim.dll
+target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/PCD/Pei/Pcd/DEBUG/PcdPeim.dll
+# Loading UEFI driver with slide address: 0x0000083C000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/PCD/Pei/Pcd/DEBUG/PcdPeim.dll --slide 0x0000083C000
+
+# PeiCore driver
+# Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Pei/PeiMain/DEBUG/PeiCore.dll
+target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Pei/PeiMain/DEBUG/PeiCore.dll
+# Loading UEFI driver with slide address: 0x0000821000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Pei/PeiMain/DEBUG/PeiCore.dll --slide 0x0000821000
+
+# DxeIpl driver
+# Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll
+target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll
+# Loading UEFI driver with slide address: 0x0000FEBA000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll --slide 0x0000FEBA000
+
 # AcpiTableDxe driver
 # Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/DEBUG/AcpiTableDxe.dll
 target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/DEBUG/AcpiTableDxe.dll
@@ -583,6 +608,7 @@ target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencor
 # Bootloader entry point (_ModuleEntryPoint or __ModuleEntryPoint)
 # breakpoint set --name __ModuleEntryPoint
 # breakpoint set --name _ModuleEntryPoint
+breakpoint set --name PeiCore
 # Bootloader main function (UefiMain)
 breakpoint set --name UefiMain
 # Kernel breakpoints
