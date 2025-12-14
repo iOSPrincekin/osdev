@@ -37,8 +37,8 @@ target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencor
 # DxeIpl driver
 # Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll
 target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll
-# Loading UEFI driver with slide address: 0x0000FEBA000
-target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll --slide 0x0000FEBA000
+# Loading UEFI driver with slide address: 0x0000FEB9000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/DxeIplPeim/DxeIpl/DEBUG/DxeIpl.dll --slide 0x0000FEB9000
 
 # AcpiTableDxe driver
 # Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/Acpi/AcpiTableDxe/AcpiTableDxe/DEBUG/AcpiTableDxe.dll
