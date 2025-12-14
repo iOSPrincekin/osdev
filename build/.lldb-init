@@ -126,8 +126,8 @@ target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencor
 # DxeCore driver
 # Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll
 target modules add /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll
-# Loading UEFI driver with slide address: 0x0000FE10000
-target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll --slide 0x0000FE10000
+# Loading UEFI driver with slide address: 0x0000FE11000
+target modules load --file /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Core/Dxe/DxeMain/DEBUG/DxeCore.dll --slide 0x0000FE11000
 
 # EbcDxe driver
 # Adding UEFI driver DLL: /Users/lee/Desktop/Computer_Systems/Macos/KVM-Opencore/src/OpenCorePkg/UDK/Build/OvmfX64/DEBUG_XCODE5/X64/MdeModulePkg/Universal/EbcDxe/EbcDxe/DEBUG/EbcDxe.dll
